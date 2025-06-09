@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>点击发泄小游戏</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: radial-gradient(#ffd6d6, #ff9999);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #clickBtn {
+      background-color: #ff4d4f;
+      border: none;
+      color: white;
+      padding: 30px 60px;
+      font-size: 32px;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: 0.1s ease-in-out;
+    }
+
+    #clickBtn:active {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px red;
+      background-color: #ff1a1a;
+    }
+
+    #stats {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #800000;
+    }
+
+    .boom {
+      position: absolute;
+      font-size: 40px;
+      color: red;
+      animation: boomFade 1s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes boomFade {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(2) translateY(-50px); }
+    }
+
+    .pulse {
+      position: absolute;
+      border: 3px solid #ff4d4f;
+      border-radius: 50%;
+      animation: pulseOut 0.8s ease-out forwards;
+      pointer-events: none;
+    }
+
+    @keyframes pulseOut {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+
+    .flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: red;
+      opacity: 0.7;
+      animation: flashBoom 0.4s ease-out forwards;
+      z-index: 9999;
+    }
+
+    @keyframes flashBoom {
+      0% { opacity: 0.7; }
+      100% { opacity: 0; }
+    }
+
+    .explosion {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      color: white;
+      background: red;
+      padding: 40px;
+      border-radius: 20px;
+      z-index: 99999;
+      animation: explode 2s ease-out forwards;
+    }
+
+    @keyframes explode {
+      0% { opacity: 0; transform: scale(0.5) translate(-50%, -50%); }
+      50% { opacity: 1; transform: scale(1.2) translate(-50%, -50%); }
+      100% { opacity: 0; transform: scale(3) translate(-50%, -50%); }
+    }
+
+    .shake {
+      animation: shakeAnim 0.1s infinite;
+    }
+
+    @keyframes shakeAnim {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(5px, -5px); }
+      50% { transform: translate(-5px, 5px); }
+      75% { transform: translate(5px, 5px); }
+      100% { transform: translate(0, 0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>发泄点击小游戏</h1>
+  <p>疯狂点我释放情绪吧！</p>
+  <button id="clickBtn">😡 点一下！</button>
+  <div id="stats"></div>
+  <div id="counter">已释放：0 次</div>
+  <div id="message">点击越多，越爽！</div>
+
+  <audio id="roar1" src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_bdd30f2d97.mp3?filename=angry-roar-1.mp3"></audio>
+  <audio id="roar2" src="https://cdn.pixabay.com/download/audio/2022/11/11/audio_6d5b0a39a5.mp3?filename=monster-roar-113213.mp3"></audio>
+
+  <script>
+    const btn = document.getElementById('clickBtn');
+    const stats = document.getElementById('stats');
+    const counter = document.getElementById('counter');
+    const messageBox = document.getElementById('message');
+    const roar1 = document.getElementById('roar1');
+    const roar2 = document.getElementById('roar2');
+
+    let clickCount = 0;
+    let lastClickTime = null;
+    let lastSpeed = null;
+
+    const messages = [
+      "继续点击，释放情绪！",
+      "不错，再来几下！",
+      "是不是感觉轻松点了？",
+      "你很棒，继续坚持！",
+      "每一下都是在照顾自己~",
+      "发泄很重要，别憋着！",
+      "深呼吸，再点一下！"
+    ];
+
+    const boomWords = ["吼！！", "啊！！", "哇啊啊！！", "滚开！！", "别惹我！！"];
+
+    function emojiRain() {
+      const emoji = document.createElement('div');
+      emoji.innerText = ['😡', '💢', '🔥', '😤'][Math.floor(Math.random() * 4)];
+      emoji.style.position = 'absolute';
+      emoji.style.left = Math.random() * window.innerWidth + 'px';
+      emoji.style.bottom = '0';
+      emoji.style.fontSize = '40px';
+      emoji.style.opacity = 1;
+      emoji.style.transition = 'all 2s linear';
+      document.body.appendChild(emoji);
+
+      setTimeout(() => {
+        emoji.style.transform = `translateY(-${Math.random() * 300 + 200}px)`;
+        emoji.style.opacity = 0;
+      }, 50);
+
+      setTimeout(() => emoji.remove(), 2000);
+    }
+
+    btn.addEventListener('click', (e) => {
+      clickCount++;
+      emojiRain(); // 加入表情雨效果
+
+      const now = new Date().getTime();
+
+      if (lastClickTime) {
+        const duration = now - lastClickTime;
+        const speed = (1000 / duration).toFixed(2);
+        let message = `当前点击速度：${speed} 次/秒`;        
+        stats.innerText = message;
+        lastSpeed = speed;
+      }
+      lastClickTime = now;
+
+      counter.innerText = `已释放：${clickCount} 次`;
+
+      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      messageBox.innerText = randomMsg;
+
+      const boom = document.createElement('div');
+      boom.classList.add('boom');
+      boom.innerText = '💥';
+      document.body.appendChild(boom);
+      boom.style.left = `${Math.random() * window.innerWidth * 0.8}px`;
+      boom.style.top = `${Math.random() * window.innerHeight * 0.8}px`;
+      setTimeout(() => boom.remove(), 1000);
+
+      const pulse = document.createElement('div');
+      pulse.classList.add('pulse');
+      pulse.style.left = `${e.clientX}px`;
+      pulse.style.top = `${e.clientY}px`;
+      pulse.style.width = '20px';
+      pulse.style.height = '20px';
+      pulse.style.transform = 'translate(-50%, -50%)';
+      document.body.appendChild(pulse);
+      setTimeout(() => pulse.remove(), 800);
+
+      if (clickCount % 10 === 0) {
+        const flash = document.createElement('div');
+flash.classList.add('flash');
+document.body.appendChild(flash);
+setTimeout(() => flash.remove(), 400);
+
+const tip = document.createElement('div');
+tip.classList.add('floating-tip');
+tip.innerText = '💣 情绪爆炸！你已经释放了 ' + clickCount + ' 次情绪！';
+document.body.appendChild(tip);
+setTimeout(() => tip.remove(), 2500);
+      }
+
+      if (clickCount % 50 === 0) {
+        document.body.classList.add('shake');
+        const explosion = document.createElement('div');
+        explosion.classList.add('explosion');
+        explosion.innerText = boomWords[Math.floor(Math.random() * boomWords.length)];
+        document.body.appendChild(explosion);
+
+        const roar = Math.random() > 0.5 ? roar1 : roar2;
+        roar.currentTime = 0;
+        roar.play();
+
+        setTimeout(() => {
+          explosion.remove();
+          document.body.classList.remove('shake');
+          alert('🔥 情绪连续爆发50次！继续发泄吧！');
+        }, 2000);
+      }
+    });
+  </script>
+</body>
+</html>
