@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>点击发泄小游戏</title>
   <style>
     body {
@@ -12,10 +13,17 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
       font-family: 'Segoe UI', sans-serif;
       overflow: hidden;
       position: relative;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      box-sizing: border-box;
+      text-align: center;
     }
 
     #clickBtn {
@@ -48,6 +56,7 @@
       color: red;
       animation: boomFade 1s ease-out forwards;
       pointer-events: none;
+      z-index: 999;
     }
 
     @keyframes boomFade {
@@ -61,6 +70,7 @@
       border-radius: 50%;
       animation: pulseOut 0.8s ease-out forwards;
       pointer-events: none;
+      z-index: 999;
     }
 
     @keyframes pulseOut {
@@ -116,15 +126,31 @@
       75% { transform: translate(5px, 5px); }
       100% { transform: translate(0, 0); }
     }
+
+    .floating-tip {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: yellow;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 9999;
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
-  <h1>发泄点击小游戏</h1>
-  <p>疯狂点我释放情绪吧！</p>
-  <button id="clickBtn">😡 点一下！</button>
-  <div id="stats"></div>
-  <div id="counter">已释放：0 次</div>
-  <div id="message">点击越多，越爽！</div>
+  <div class="container">
+    <h1>发泄点击小游戏</h1>
+    <p>疯狂点我释放情绪吧！</p>
+    <button id="clickBtn">😡 点一下！</button>
+    <div id="stats"></div>
+    <div id="counter">已释放：0 次</div>
+    <div id="message">点击越多，越爽！</div>
+  </div>
 
   <audio id="roar1" src="https://cdn.pixabay.com/download/audio/2022/03/22/audio_bdd30f2d97.mp3?filename=angry-roar-1.mp3"></audio>
   <audio id="roar2" src="https://cdn.pixabay.com/download/audio/2022/11/11/audio_6d5b0a39a5.mp3?filename=monster-roar-113213.mp3"></audio>
@@ -174,23 +200,19 @@
 
     btn.addEventListener('click', (e) => {
       clickCount++;
-      emojiRain(); // 加入表情雨效果
+      emojiRain();
 
       const now = new Date().getTime();
-
       if (lastClickTime) {
         const duration = now - lastClickTime;
         const speed = (1000 / duration).toFixed(2);
-        let message = `当前点击速度：${speed} 次/秒`;        
-        stats.innerText = message;
+        stats.innerText = `当前点击速度：${speed} 次/秒`;
         lastSpeed = speed;
       }
       lastClickTime = now;
 
       counter.innerText = `已释放：${clickCount} 次`;
-
-      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-      messageBox.innerText = randomMsg;
+      messageBox.innerText = messages[Math.floor(Math.random() * messages.length)];
 
       const boom = document.createElement('div');
       boom.classList.add('boom');
@@ -212,15 +234,15 @@
 
       if (clickCount % 10 === 0) {
         const flash = document.createElement('div');
-flash.classList.add('flash');
-document.body.appendChild(flash);
-setTimeout(() => flash.remove(), 400);
+        flash.classList.add('flash');
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
 
-const tip = document.createElement('div');
-tip.classList.add('floating-tip');
-tip.innerText = '💣 情绪爆炸！你已经释放了 ' + clickCount + ' 次情绪！';
-document.body.appendChild(tip);
-setTimeout(() => tip.remove(), 2500);
+        const tip = document.createElement('div');
+        tip.classList.add('floating-tip');
+        tip.innerText = '💣 情绪爆炸！你已经释放了 ' + clickCount + ' 次情绪！';
+        document.body.appendChild(tip);
+        setTimeout(() => tip.remove(), 2500);
       }
 
       if (clickCount % 50 === 0) {
